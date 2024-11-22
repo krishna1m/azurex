@@ -71,28 +71,31 @@ defmodule Azurex.Blob do
         ) ::
           :ok
           | {:error, HTTPoison.AsyncResponse.t() | HTTPoison.Error.t() | HTTPoison.Response.t()}
-  def put_blob(name, blob, content_type, container \\ nil, params \\ [])
+  def put_blob(name, blob, content_type, container \\ nil, options \\ [])
 
-  def put_blob(name, {:stream, bitstream}, content_type, container, params) do
+  def put_blob(name, {:stream, bitstream}, content_type, container, options) do
     content_type = content_type || "application/octet-stream"
 
     bitstream
     |> Stream.transform(
       fn -> [] end,
       fn chunk, acc ->
-        with {:ok, block_id} <- Block.put_block(container, chunk, name, params) do
+        with {:ok, block_id} <- Block.put_block(container, chunk, name, options) do
           {[], [block_id | acc]}
         end
       end,
       fn acc ->
-        Block.put_block_list(acc, container, name, content_type, params)
+        Block.put_block_list(acc, container, name, content_type, options)
       end
     )
     |> Stream.run()
   end
 
-  def put_blob(name, blob, content_type, container, params) do
+  def put_blob(name, blob, content_type, container, options) do
     content_type = content_type || "application/octet-stream"
+    {params, options} = Keyword.pop(options, :params, [])
+    {headers, options} = Keyword.pop(options, :headers, [])
+    headers = Enum.map(headers, fn {k, v} -> {to_string(k), v} end)
 
     %HTTPoison.Request{
       method: :put,
@@ -100,11 +103,11 @@ defmodule Azurex.Blob do
       params: params,
       body: blob,
       headers: [
-        {"x-ms-blob-type", "BlockBlob"}
+        {"x-ms-blob-type", "BlockBlob"} | headers
       ],
       # Blob storage only answers when the whole file has been uploaded, so recv_timeout
       # is not applicable for the put request, so we set it to infinity
-      options: [recv_timeout: :infinity]
+      options: [recv_timeout: :infinity] ++ options
     }
     |> SharedKey.sign(
       storage_account_name: Config.storage_account_name(),

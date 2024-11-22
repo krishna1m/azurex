@@ -66,7 +66,7 @@ defmodule Azurex.BlobIntegrationTests do
              ) == {:ok, @sample_file_contents}
     end
 
-    test "passing container and params" do
+    test "passing container and options with params and headers" do
       blob_name = make_blob_name()
 
       assert Blob.put_blob(
@@ -74,8 +74,10 @@ defmodule Azurex.BlobIntegrationTests do
                @sample_file_contents,
                "text/plain",
                @integration_testing_container,
-               timeout: 10,
-               ignored_param: "ignored_param_value"
+               options: [
+                 params: [timeout: 10, ignored_param: "ignored_param_value"],
+                 headers: [ignored_header: "ignored_header_value"]
+               ]
              ) == :ok
 
       assert Blob.get_blob(
