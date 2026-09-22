@@ -28,7 +28,7 @@ defmodule Azurex.MixProject do
     [
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:httpoison, "~> 1.8 or ~> 2.2"}
+      {:httpoison, "~> 1.8 or ~> 2.2 or ~> 3.0"}
     ]
   end
 
